@@ -217,7 +217,7 @@ const createCollection = async (
       },
       '4': {
         name: {_: 'Air Quality Index'},
-        type: AttributeType.url,
+        type: AttributeType.number,
         optional: false,
         isArray: false,
       },
@@ -282,7 +282,6 @@ const createCollection = async (
     ...collectionArgs,
     address,
     schema: collectionSchema,
-
     tokenPropertyPermissions: [
       /* {key: 'i.c', permission: {mutable: true, collectionAdmin: true, tokenOwner: false}},
       {key: 'i.u', permission: {mutable: true, collectionAdmin: true, tokenOwner: false}},
@@ -359,6 +358,7 @@ async function main() {
     images.Cover
   )
   console.log(collection)
+  
   const token = await mintToken(
     sdk,
     {address: signer.getAddress(), collectionId: await collection.id},
