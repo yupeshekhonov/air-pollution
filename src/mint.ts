@@ -7,48 +7,20 @@ import {
   TokenByIdResponse,
   UniqueCollectionSchemaToCreateDto,
 } from '@unique-nft/sdk'
-import axios from 'axios'
-import { SDKFactories, addHours, getConfig, getSinger } from './utils'
+import {
+  IMAGES,
+  SDKFactories,
+  addHours,
+  getAirPollution,
+  getConfig,
+  getLocation,
+  getSinger,
+} from './utils'
 
 type CreateCollectionFields = Pick<CreateCollectionBody, 'name' | 'description' | 'tokenPrefix'>
-const API_KEY = '0ffaaeb43624495d4ebc7b73293cef9c'
+
 const IPFS_CID = 'https://ipfs.unique.network/ipfs/QmZWgNu59PqTdhAfqRs8awCeZqtGahFztJ8oNonrs3WGDU'
-const UPDATE_INTERVAL = 4
 const RESOURCE = 'https://openweathermap.org/'
-enum images {
-  Good = '1 - Good.png',
-  Fair = '2 - Fair.png',
-  Moderate = '3 - Moderate.png',
-  Poor = '4 - Poor.png',
-  VeryPoor = '5 - Very Poor.png',
-  Cover = 'cover.png',
-}
-
-const getLocation = async (city: string) => {
-  const response = await axios.get(
-    `https://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=${API_KEY}`
-  )
-
-  if (response) {
-    return response.data[0]
-  } else {
-    console.log('Error occurred while fetching coordinates.')
-  }
-}
-
-const getAirPollution = async (city: string) => {
-  const {lat, lon} = await getLocation(city)
-
-  const response = await axios.get(
-    `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`
-  )
-
-  if (response) {
-    return response
-  } else {
-    console.log('Error occurred while fetching air pollution.')
-  }
-}
 
 const createCollection = async (
   sdk: Client,
@@ -61,7 +33,8 @@ const createCollection = async (
     schemaVersion: '1.0.0',
     attributesSchemaVersion: '1.0.0',
     image: {
-      urlTemplate: 'https://ipfs.unique.network/ipfs/QmZWgNu59PqTdhAfqRs8awCeZqtGahFztJ8oNonrs3WGDU/{infix}',
+      urlTemplate:
+        'https://ipfs.unique.network/ipfs/QmZWgNu59PqTdhAfqRs8awCeZqtGahFztJ8oNonrs3WGDU/{infix}',
     },
     coverPicture: {
       ipfsCid: coverPictureIpfsCid,
@@ -226,7 +199,7 @@ const createCollection = async (
           '2': {_: 3},
           '3': {_: 4},
           '4': {_: 5},
-        }
+        },
       },
       '5': {
         name: {_: 'Сoncentration of CO (Carbon monoxide), μg/m3'},
@@ -310,8 +283,9 @@ const mintToken = async (
 ): Promise<TokenByIdResponse | void> => {
   const airPollution = await getAirPollution(city)
   const cityData = await getLocation(city)
-  const aqi = (airPollution as any).list.main.aqi as number
+  const aqi = (airPollution as any).list[0].main.aqi as number
   const now = new Date()
+  const config = getConfig()
 
   if (airPollution && cityData) {
     const {parsed, error} = await sdk.tokens.create.submitWaitResult({
@@ -321,7 +295,7 @@ const mintToken = async (
           '0': {_: city},
           '1': {_: cityData[0].state},
           '2': {_: `${now}`},
-          '3': {_: `${addHours(now, UPDATE_INTERVAL)}`},
+          '3': {_: `${addHours(now, config.interval)}`},
           '4': {_: (airPollution as any).list.main.aqi},
           '5': {_: (airPollution as any).list.components.co},
           '6': {_: (airPollution as any).list.components.no},
@@ -334,7 +308,7 @@ const mintToken = async (
           '13': {_: RESOURCE},
         },
         image: {
-          url: Object.values(images)[aqi],
+          url: Object.values(IMAGES)[aqi],
         },
       },
     })
@@ -348,10 +322,9 @@ const mintToken = async (
 }
 
 async function main() {
-  // const {lat, lon} = await getLocation('London')
 
   const signer = await getSinger(getConfig().mnemonic)
-  const sdk = SDKFactories['opal' as keyof typeof SDKFactories](signer)
+  const sdk = SDKFactories['uniqsu' as keyof typeof SDKFactories](signer)
 
   // mint
   const collection = await createCollection(
@@ -360,13 +333,13 @@ async function main() {
     {
       name: 'Live Air Quality Index',
       description:
-        'Air pollution can have serious negative effects on human health, including respiratory and cardiovascular diseases. It can also damage the environment, including vegetation and wildlife. Collection tokens show real-time air quality index of different cities to draw attention to one of the most pressing environmental issues of our time.',
+        'Air pollution can have serious negative effects on human health. Collection tokens show real-time air quality index of different cities to draw attention to one of the most pressing environmental issues of our time.',
       tokenPrefix: 'AQI',
     },
-    images.Cover
+    IMAGES.Cover
   )
-  console.log(collection)
-  
+  //console.log(collection)
+
   const token = await mintToken(
     sdk,
     {address: signer.getAddress(), collectionId: await collection.id},
@@ -376,5 +349,5 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error)
+  console.error(error.response?.data || error)
 })

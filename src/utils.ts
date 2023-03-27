@@ -1,19 +1,22 @@
 import { KeyringAccount, KeyringProvider } from '@unique-nft/accounts/keyring'
 import { Client, Sdk, Signer } from '@unique-nft/sdk'
+import axios from 'axios'
 import * as dotenv from 'dotenv'
 
 export const getConfig = () => {
   dotenv.config()
 
-  if (!process.env.IMAGES_DIR) {
-    throw new Error('Empty or invalid folder.')
+  if (!process.env.API_KEY) {
+    throw new Error('Empty or invalid API key.')
   }
   const port = parseInt(process.env.PORT || '3000', 10)
+  const interval = parseInt(process.env.UPDATE_INTERVAL || '4', 10)
   return {
-    imagesDir: process.env.IMAGES_DIR,
     mnemonic: process.env.MNEMONIC || '',
     host: process.env.HOST || 'localhost',
     port: !isNaN(port) ? port : 3000,
+    interval: !isNaN(interval) ? interval : 1, 
+    apiKey: process.env.API_KEY || '',
   }
 }
 
@@ -57,9 +60,40 @@ export const SDKFactories = <const>{
   uniqsu: (signer?: Signer) => new Sdk({baseUrl: 'https://rest.unq.uniq.su/v1', signer}),
 }
 
+export const getLocation = async (city: string) => {
+  const config = getConfig()
+  const response = await axios.get(
+    `https://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=${config.apiKey}`
+  )
+
+  if (response) {
+    return {...response.data[0], apiKey: config.apiKey}
+  } else {
+    console.log('Error occurred while fetching coordinates.')
+  }
+}
+
+export const getAirPollution = async (city: string) => {
+  const {lat, lon, apiKey} = await getLocation(city)
+
+  const response = await axios.get(
+    `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`
+  )
+
+  if (response) {
+    return response.data
+  } else {
+    console.log('Error occurred while fetching air pollution.')
+  }
+}
+
 export const KNOWN_NETWORKS = Object.keys(SDKFactories)
 
-export enum KNOWN_AVATARS {
-  Workaholic = 'workaholic', 
-  Pirate = 'pirate',
+export enum IMAGES {
+  Good = '1 - Good.png',
+  Fair = '2 - Fair.png',
+  Moderate = '3 - Moderate.png',
+  Poor = '4 - Poor.png',
+  VeryPoor = '5 - Very Poor.png',
+  Cover = 'cover.png',
 }
