@@ -220,6 +220,13 @@ const createCollection = async (
         type: AttributeType.number,
         optional: false,
         isArray: false,
+        enumValues: {
+          '0': {_: 1},
+          '1': {_: 2},
+          '2': {_: 3},
+          '3': {_: 4},
+          '4': {_: 5},
+        }
       },
       '5': {
         name: {_: 'Сoncentration of CO (Carbon monoxide), μg/m3'},
