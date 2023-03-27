@@ -43,6 +43,12 @@ export const getSdk = async (
   }
 }
 
+export const addHours = (date: Date, hours: number): Date => {
+  const result = new Date(date);
+  result.setHours(result.getHours() + hours);
+  return result;
+};
+
 export const SDKFactories = <const>{
   opal: (signer?: Signer) => new Sdk({baseUrl: 'https://rest.unique.network/opal/v1', signer}),
   quartz: (signer?: Signer) => new Sdk({baseUrl: 'https://rest.unique.network/quartz/v1', signer}),

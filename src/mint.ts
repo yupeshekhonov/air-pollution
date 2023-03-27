@@ -8,7 +8,7 @@ import {
   UniqueCollectionSchemaToCreateDto,
 } from '@unique-nft/sdk'
 import axios from 'axios'
-import { SDKFactories, getConfig, getSinger } from './utils'
+import { SDKFactories, addHours, getConfig, getSinger } from './utils'
 
 type CreateCollectionFields = Pick<CreateCollectionBody, 'name' | 'description' | 'tokenPrefix'>
 const API_KEY = '0ffaaeb43624495d4ebc7b73293cef9c'
@@ -304,6 +304,7 @@ const mintToken = async (
   const airPollution = await getAirPollution(city)
   const cityData = await getLocation(city)
   const aqi = (airPollution as any).list.main.aqi as number
+  const now = new Date()
 
   if (airPollution && cityData) {
     const {parsed, error} = await sdk.tokens.create.submitWaitResult({
@@ -312,8 +313,8 @@ const mintToken = async (
         encodedAttributes: {
           '0': {_: city},
           '1': {_: cityData[0].state},
-          '2': {_: `${Date.now()}`},
-          '3': {_: `${Date.now() + UPDATE_INTERVAL}`},
+          '2': {_: `${now}`},
+          '3': {_: `${addHours(now, UPDATE_INTERVAL)}`},
           '4': {_: (airPollution as any).list.main.aqi},
           '5': {_: (airPollution as any).list.components.co},
           '6': {_: (airPollution as any).list.components.no},
