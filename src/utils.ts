@@ -15,7 +15,7 @@ export const getConfig = () => {
     mnemonic: process.env.MNEMONIC || '',
     host: process.env.HOST || 'localhost',
     port: !isNaN(port) ? port : 3000,
-    interval: !isNaN(interval) ? interval : 1, 
+    interval: !isNaN(interval) ? interval : 1,
     apiKey: process.env.API_KEY || '',
   }
 }
@@ -47,10 +47,10 @@ export const getSdk = async (
 }
 
 export const addHours = (date: Date, hours: number): Date => {
-  const result = new Date(date);
-  result.setHours(result.getHours() + hours);
-  return result;
-};
+  const result = new Date(date)
+  result.setHours(result.getHours() + hours)
+  return result
+}
 
 export const SDKFactories = <const>{
   opal: (signer?: Signer) => new Sdk({baseUrl: 'https://rest.unique.network/opal/v1', signer}),
@@ -76,24 +76,95 @@ export const getLocation = async (city: string) => {
 export const getAirPollution = async (city: string) => {
   const {lat, lon, apiKey} = await getLocation(city)
 
-  const response = await axios.get(
-    `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`
-  )
+  if (lat && lon) {
+    const response = await axios.get(
+      `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`
+    )
 
-  if (response) {
-    return response.data
+    if (response) {
+      return response.data
+    } else {
+      console.log('Error occurred while fetching air pollution.')
+    }
   } else {
-    console.log('Error occurred while fetching air pollution.')
+    console.log(`Cannot fetch data for ${city}`)
   }
 }
 
 export const KNOWN_NETWORKS = Object.keys(SDKFactories)
 
+export const IPFS_CID =
+  'https://ipfs.unique.network/ipfs/QmX4DmQYobCMFJv32EvNhk8ppDMJDiAhiR1axJYcaKa8M2/'
+export const RESOURCE = 'https://openweathermap.org/'
+
 export enum IMAGES {
-  Good = '1 - Good.png',
-  Fair = '2 - Fair.png',
-  Moderate = '3 - Moderate.png',
-  Poor = '4 - Poor.png',
-  VeryPoor = '5 - Very Poor.png',
+  Good = 'Good.png',
+  Fair = 'Fair.png',
+  Moderate = 'Moderate.png',
+  Poor = 'Poor.png',
+  VeryPoor = 'Very Poor.png',
   Cover = 'cover.png',
 }
+
+export const CITIES: string[] = [
+  'Tokyo',
+  'Delhi',
+  'Shanghai',
+  'Dhaka',
+  'Sao Paulo',
+  'Mexico City',
+  'Cairo',
+  'Beijing',
+  'Mumbai',
+  'Osaka',
+  'Chongqing',
+  'Karachi',
+  'Istanbul',
+  'Kinshasa',
+  'Lagos',
+  'Buenos Aires',
+  'Kolkata',
+  'Manila',
+  'Tianjin',
+  'Guangzhou',
+  'Rio de Janeiro',
+  'Lahore',
+  'Bangalore',
+  'Shenzhen',
+  'Moscow',
+  'Chennai',
+  'Bogota',
+  'Paris',
+  'Jakarta',
+  'Lima',
+  'Bangkok',
+  'Hyderabad',
+  'Seoul',
+  'Nagoya',
+  'London',
+  'Chengdu',
+  'Nanjing',
+  'Tehran',
+  'Ho Chi Minh City',
+  'Luanda',
+  'New York City',
+  'Wuhan',
+  'Xi-an',
+  'Ahmedabad',
+  'Kuala Lumpur',
+  'Hangzhou',
+  'Surat',
+  'Suzhou',
+  'Hong Kong',
+  'Riyadh',
+  'Shenyang',
+  'Baghdad',
+  'Dongguan',
+  'Foshan',
+  'Dar es Salaam',
+  'Pune',
+  'Santiago',
+  'Madrid',
+  'Harbin',
+  'Toronto',
+]

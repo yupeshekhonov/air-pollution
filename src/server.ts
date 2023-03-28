@@ -2,7 +2,9 @@ import Router from '@koa/router'
 import { SetTokenPropertiesBody } from '@unique-nft/sdk'
 import Koa from 'koa'
 import {
+  CITIES,
   IMAGES,
+  IPFS_CID,
   SDKFactories,
   addHours,
   getAirPollution,
@@ -16,7 +18,7 @@ const config = getConfig()
 const app = new Koa()
 const router = new Router()
 
-const lastRenderTimes: Record<string, number> = {}
+const lastRenderTimes: Date[] = []
 const TIMEOUT = 10 * 1000
 
 const updateToken = async (tokenArgs: SetTokenPropertiesBody, city: string) => {
@@ -24,49 +26,50 @@ const updateToken = async (tokenArgs: SetTokenPropertiesBody, city: string) => {
   const sdk = SDKFactories['opal' as keyof typeof SDKFactories](signer)
   const airPollution = await getAirPollution(city)
   const cityData = await getLocation(city)
-  const aqi = (airPollution as any).list.main.aqi as number
+  const airData = (airPollution as any).list[0]
+  const aqi = airData.main.aqi as number
   const now = new Date()
 
   if (airPollution && cityData) {
     const {parsed, error} = await sdk.tokens.setProperties.submitWaitResult({
       ...tokenArgs,
       properties: [
-        {key: 'Last update', value: 'now'},
-        {key: 'Next update', value: `${addHours(now, config.interval)}`},
-        {key: 'Air Quality Index', value: (airPollution as any).list.main.aqi},
+        {key: 'a.2', value: `${now.toLocaleString()}`},
+        {key: 'a.3', value: `${addHours(now, config.interval).toLocaleString()}`},
+        {key: 'a.4', value: airData.main.aqi},
         {
-          key: 'Сoncentration of CO (Carbon monoxide), μg/m3',
-          value: (airPollution as any).list.components.co,
+          key: 'a.5',
+          value: airData.components.co,
         },
         {
-          key: 'Сoncentration of NO (Nitrogen monoxide), μg/m3',
-          value: (airPollution as any).list.components.no,
+          key: 'a.6',
+          value: airData.components.no,
         },
         {
-          key: 'Сoncentration of NO2 (Nitrogen dioxide), μg/m3',
-          value: (airPollution as any).list.components.no2,
+          key: 'a.7',
+          value: airData.components.no2,
         },
         {
-          key: 'Сoncentration of O3 (Ozone), μg/m3',
-          value: (airPollution as any).list.components.o3,
+          key: 'a.8',
+          value: airData.components.o3,
         },
         {
-          key: 'Сoncentration of SO2 (Sulphur dioxide), μg/m3',
-          value: (airPollution as any).list.components.so2,
+          key: 'a.9',
+          value: airData.components.so2,
         },
         {
-          key: 'Сoncentration of PM2.5 (Fine particles matter), μg/m3',
-          value: (airPollution as any).list.components.pm2_5,
+          key: 'a.10',
+          value: airData.components.pm2_5,
         },
         {
-          key: 'Сoncentration of PM10 (Coarse particulate matter), μg/m3',
-          value: (airPollution as any).list.components.pm10,
+          key: 'a.11',
+          value: airData.components.pm10,
         },
         {
-          key: 'Сoncentration of PM10 (Coarse particulate matter), μg/m3',
-          value: (airPollution as any).list.components.nh3,
+          key: 'a.12',
+          value: airData.components.nh3,
         },
-        {key: 'image', value: Object.values(IMAGES)[aqi]},
+        {key: 'i.u', value: IPFS_CID + Object.values(IMAGES)[aqi - 1]},
       ],
     })
 
@@ -81,22 +84,29 @@ const updateToken = async (tokenArgs: SetTokenPropertiesBody, city: string) => {
   }
 }
 
-router.get(`/:city`, async (ctx) => {
+router.get('', async (ctx) => {
   const city: string = ctx.params.city || ''
+  const now = new Date() 
 
   // Check if the timeout expired
-  /* if (!lastRenderTimes[path] || Date.now() - lastRenderTimes[path] > CACHE_TIME) {
-    const sdk = SDKFactories[network as keyof typeof SDKFactories]()
-
-    const imgArray = await getTokenImageUrls(sdk, {collectionId, tokenId})
-    await mergeImages(imgArray, offset, path)
-    lastRenderTimes[path] = Date.now()
+  if (!lastRenderTimes[lastRenderTimes.length - 1] || (now.getDate() - lastRenderTimes[lastRenderTimes.length - 1].getDate()) > config.interval) {
+    const signer = await getSinger(getConfig().mnemonic)
+    const sdk = SDKFactories['opal' as keyof typeof SDKFactories]()
+    lastRenderTimes.push(new Date())
+    for (const index in CITIES) {
+      updateToken({
+        address: signer.getAddress(),
+        collectionId: 710,
+        tokenId: index,
+        
+      }, CITIES[index])
+    }
   }
-  console.log(`Serving ${path}...`)
+  /* console.log(`Serving ${path}...`)
 
   const stream = fs.createReadStream(path)
   ctx.response.set('content-type', 'image/png')
-  ctx.body = stream */
+  ctx.body = stream  */
 })
 
 app.use(router.routes()).use(router.allowedMethods())
