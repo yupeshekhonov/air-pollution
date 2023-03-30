@@ -13,15 +13,17 @@ import {
   getSinger,
 } from './utils'
 
+type SetPropertiesFields = Pick<SetTokenPropertiesBody, 'address' | 'collectionId' | 'tokenId'>
+
 const config = getConfig()
 
 const app = new Koa()
 const router = new Router()
 
 const lastRenderTimes: Date[] = []
-const TIMEOUT = 10 * 1000
+const COLLECTION_ID = 1052
 
-const updateToken = async (tokenArgs: SetTokenPropertiesBody, city: string) => {
+const updateToken = async (tokenArgs: SetPropertiesFields, city: string) => {
   const signer = await getSinger(getConfig().mnemonic)
   const sdk = SDKFactories['opal' as keyof typeof SDKFactories](signer)
   const airPollution = await getAirPollution(city)
@@ -84,30 +86,44 @@ const updateToken = async (tokenArgs: SetTokenPropertiesBody, city: string) => {
   }
 }
 
-router.get('', async (ctx) => {
-  const city: string = ctx.params.city || ''
+function wait(ms:number){
+  var start = new Date().getTime();
+  var end = start;
+  while(end < start + ms) {
+    end = new Date().getTime();
+ }
+}
+
+router.all('/', async (ctx) => {
   const now = new Date() 
 
-  // Check if the timeout expired
+  console.log('Update started ... ')
+  const signer = await getSinger(getConfig().mnemonic)
+    const sdk = SDKFactories['opal' as keyof typeof SDKFactories]()
+  for (const city of CITIES) {
+    updateToken({
+      address: signer.getAddress(),
+      collectionId: COLLECTION_ID,
+      tokenId: CITIES.indexOf(city) + 1,
+    }, city)
+    wait(5000)
+    console.log(`${city} was updated.`)
+  }
+
+ /*  // Check if the timeout expired
   if (!lastRenderTimes[lastRenderTimes.length - 1] || (now.getDate() - lastRenderTimes[lastRenderTimes.length - 1].getDate()) > config.interval) {
     const signer = await getSinger(getConfig().mnemonic)
     const sdk = SDKFactories['opal' as keyof typeof SDKFactories]()
     lastRenderTimes.push(new Date())
-    for (const index in CITIES) {
+    for (const city of CITIES) {
       updateToken({
         address: signer.getAddress(),
-        collectionId: 710,
-        tokenId: index,
-        
-      }, CITIES[index])
+        collectionId: COLLECTION_ID,
+        tokenId: CITIES.indexOf(city),
+      }, city)
     }
-  }
-  /* console.log(`Serving ${path}...`)
-
-  const stream = fs.createReadStream(path)
-  ctx.response.set('content-type', 'image/png')
-  ctx.body = stream  */
-})
+  } */
+}) 
 
 app.use(router.routes()).use(router.allowedMethods())
 
